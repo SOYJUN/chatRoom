@@ -7,16 +7,18 @@
 #include <stdexcept>
 #include <string>
 
-#define throwError(arg) throw parseException((arg), __FILE__, __LINE__);
+#include "unp.h"
+
+#define throwError(arg) throw Exception((arg), __FILE__, __LINE__);
 
 using namespace std;
 
-class parseException : public runtime_error 
+class Exception : public runtime_error 
 {
 
 public:
 
-	parseException(const string &s, const char *file, int line) :
+	Exception(const string &s, const char *file, int line) :
 	
 	runtime_error(s) 
 	{
@@ -25,10 +27,11 @@ public:
 		msg = out.str();
 	}
 	
-	~parseException() throw() {}
+	~Exception() throw() {}
 	
 	const char* what() const throw() 
 	{
+		perror("func run");
 		return msg.c_str();	
 	}
 

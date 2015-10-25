@@ -8,7 +8,6 @@
 #include "Exception.h"
 
 #define SERVER_IP		"127.0.0.1"
-#define SERVER_PORT		9502
 
 class TCPclient
 {
@@ -17,16 +16,19 @@ public:
 	
 	void sendMsg()
 	{
-		string input;
+		int nwrite = 0;
+		char inputline[MAXLINE];
+
 		cout << "Enter your msg: ";
-		cin >> input;
-		if(write(sockfd, input.c_str(), strlen(input.c_str())) < 0) {
-			throwError("[client]: writen error");
+		scanf("%[^\n]%*c", inputline);
+		if((nwrite = write(sockfd, inputline, strlen(inputline))) < 0) {
+			throwError("[client]: write error");
 		}	
+		cout << "---Send out " << nwrite << "-bytes data" << endl;	
 	}
 
-	TCPclient() {
-		connectToServer();
+	TCPclient(int port_num) {
+		connectToServer(port_num);
 	}
 
    ~TCPclient() {}
@@ -37,7 +39,7 @@ private:
 	// the sock fd used to communicate
 	int sockfd;
 	
-	void connectToServer()
+	void connectToServer(int port_num)
 	{
 		struct sockaddr_in servaddr;		
 
@@ -46,7 +48,7 @@ private:
 		}
 		bzero(&servaddr, sizeof(servaddr));	
 		servaddr.sin_family = AF_INET;
-		servaddr.sin_port = htons(SERVER_PORT);
+		servaddr.sin_port = htons(port_num);
 		if(inet_pton(AF_INET, SERVER_IP, &servaddr.sin_addr) <= 0) {
 			throwError("[client]: inet_pton() translate error");
 		}	
