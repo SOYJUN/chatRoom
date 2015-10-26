@@ -3,35 +3,39 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include "unp.h"
+#include "Aux.h"
 #include "Exception.h"
 
-#define SERVER_IP		"127.0.0.1"
 
 class TCPclient
 {
 
 public:
 	
-	void sendMsg()
+	void runWriteThread()
 	{
-		int nwrite = 0;
-		char inputline[MAXLINE];
-
-		cout << "Enter your msg: ";
-		scanf("%[^\n]%*c", inputline);
-		if((nwrite = write(sockfd, inputline, strlen(inputline))) < 0) {
-			throwError("[client]: write error");
-		}	
-		cout << "---Send out " << nwrite << "-bytes data" << endl;	
+		writeThread = thread(&TCPclient::sendMsg, this);
 	}
 
-	TCPclient(int port_num) {
-		connectToServer(port_num);
+	void runReadThread()
+	{
+		readThread = thread(&TCPclient::recvMsg, this);
 	}
 
-   ~TCPclient() {}
+	TCPclient(int port_num) 
+	{
+		sockfd = connectToServer(port_num);
+	}
+
+   ~TCPclient() 
+	{
+	    writeThread.join();
+		readThread.join();	
+		close(sockfd);
+	}
 
 
 private:
@@ -39,24 +43,41 @@ private:
 	// the sock fd used to communicate
 	int sockfd;
 	
-	void connectToServer(int port_num)
+	thread readThread; 
+	thread writeThread;
+	
+	void sendMsg()
 	{
-		struct sockaddr_in servaddr;		
-
-		if((sockfd = socket(AF_INET, SOCK_STREAM,  0)) < 0) {
-			throwError("[client]: socket build error");
-		}
-		bzero(&servaddr, sizeof(servaddr));	
-		servaddr.sin_family = AF_INET;
-		servaddr.sin_port = htons(port_num);
-		if(inet_pton(AF_INET, SERVER_IP, &servaddr.sin_addr) <= 0) {
-			throwError("[client]: inet_pton() translate error");
-		}	
-		if(connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0) {
-			throwError("[client]: connect() error");	
+		int nwrite = 0;
+		char sendline[MAXLINE];
+		
+		while(1) {
+			cout << "Enter your msg: ";
+			scanf("%[^\n]%*c", sendline);
+			if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
+				throwError("[client]: write error");
+			}	
+			cout << "---Send out " << nwrite << "-bytes data" << endl;	
 		}
 	}
 
+	void recvMsg()
+	{
+		int nread = 0;	
+		char recvline[MAXLINE];
+	
+		while(1) {
+			bzero(recvline, sizeof(recvline));
+			nread = read(sockfd, recvline, sizeof(recvline));
+			if(nread < 0) {
+				throwError("[client]: readline error");
+			} else if(nread == 0) {
+				cout << "\n[WARNING]: Server has shut down" << endl;
+				exit(0);
+			}
+			cout << "Receive data from server: " << recvline << endl; 
+		}
+	}
 
 };
 

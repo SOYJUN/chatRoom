@@ -2,10 +2,10 @@
 #define _AUX_H
 
 #include <iostream>
-#include <time.h>
 
 #include "unp.h"
 #include "Exception.h"
+#include "PRM.h"
 
 /*------------------------------------------------------------------------
 					S I G N A L
@@ -28,6 +28,28 @@ void sig_chld(int signo)
 					N E T W O R K	
 --------------------------------------------------------------------------
 */
+
+int connectToServer(int port_num)
+{
+	int sockfd;
+	struct sockaddr_in servaddr;		
+
+	if((sockfd = socket(AF_INET, SOCK_STREAM,  0)) < 0) {
+		throwError("[client]: socket build error");
+	}
+	bzero(&servaddr, sizeof(servaddr));	
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(port_num);
+	if(inet_pton(AF_INET, SERVER_IP, &servaddr.sin_addr) <= 0) {
+		throwError("[client]: inet_pton() translate error");
+	}	
+	if(connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0) {
+		throwError("[client]: connect() error");	
+	}
+	
+	return sockfd;
+}
+
 
 int initiateMonitor(int port_num, const char* interface = "INADDR_ANY")
 {
@@ -81,20 +103,6 @@ int acceptConnection(int listenfd)
 	return connfd;
 }
 
-/*------------------------------------------------------------------------
-					F U N C T I O N	
---------------------------------------------------------------------------
-*/
-
-void getDayTime(char* buff, size_t len) 
-{
-	time_t			ticks;
-	
-	ticks = time(NULL);
-	bzero(buff, len);
-	snprintf(buff, len, "%.24s\r\n", ctime(&ticks));
-			
-}
 
 
 #endif

@@ -1,13 +1,14 @@
 #include "TCPclient.h"
+#include "PRM.h"
 
-#define COMM_PORT 9502
 
 int main()
 {
 	TCPclient client(COMM_PORT);
 	
-	while(1) {	
-		client.sendMsg();
-	}
+	client.runWriteThread();
+	client.runReadThread();
+		
+	while(1);
 	exit(0);
 }

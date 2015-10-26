@@ -29,6 +29,7 @@ public:
 	
 	const char* what() const throw() 
 	{
+		perror("Func run: ");
 		return msg.c_str();	
 	}
 

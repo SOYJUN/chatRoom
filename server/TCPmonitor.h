@@ -52,8 +52,11 @@ public:
 					
 					if((pid = fork()) == 0) {
 						closeAllFd();
-						Service service;
-						if(it->first == 9502) service.receiver(connfd); 
+						Service service(connfd);
+						service.runRecvThread(); 
+						while(1); // block the main thread here
+						close(connfd);
+						exit(0);
 					}
 					close(connfd);
 				}
@@ -77,8 +80,6 @@ private:
 
 	// here use hash map to record the <port num, listen fd> pair
 	map<int, int> port_table;	
-	// this map record the <listen fd, thread function> pair
-	//map<int, void*> func_table;
 
 	// close all the listen fd in child process
 	void closeAllFd()
