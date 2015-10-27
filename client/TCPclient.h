@@ -30,7 +30,7 @@ public:
 		sockfd = connectToServer(port_num);
 	}
 
-   ~TCPclient() 
+	~TCPclient() 
 	{
 	    writeThread.join();
 		readThread.join();	

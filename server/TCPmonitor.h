@@ -27,8 +27,8 @@ public:
 
 	void monitorRequest()
 	{
-		int					maxfdp1, connfd;
-		fd_set				rset;
+		int			maxfdp1, connfd;
+		fd_set		rset;
 		
 		FD_ZERO(&rset);
 
@@ -46,20 +46,17 @@ public:
 			// monitor all the added listen fd
 			traverse(port_table, it) {
 				if(FD_ISSET(it->second, &rset)) {
-					pid_t		pid;
 					connfd = acceptConnection(it->second);
-					cout << "before added, table size: " << conn_table->size() << endl;
-					addConnFd(connfd, idAllo++);
-					cout << "after added, table size: "<< conn_table->size() << endl;	
-					if((pid = fork()) == 0) {
-						closeAllFd();
-						Service service(connfd);
-						service.runGroupChatThread(conn_table); 
-						while(1); // block the main thread here
-						closeConnFd(connfd);
-						exit(0);
-					}
-					closeConnFd(connfd);
+					addConnFd(connfd, idAllo);
+
+					/* run the relevant service thread
+					   each user id corresponding to a service object
+					*/
+					Service *service = new Service(connfd);
+					addServiceToTable(idAllo, service);		
+					service->runGroupChatThread(&conn_table); 
+
+					idAllo++;
 				}
 			}
 		}
@@ -67,14 +64,15 @@ public:
 
 	TCPmonitor() 
 	{
-		conn_table = new map<int, int>();
 		idAllo = 0;
 		maxfd = -1;
 	}
 
 	~TCPmonitor() 
 	{
-		delete(conn_table);
+		traverse(service_table, it) {
+			delete(it->second);
+		}
 	}
 
 
@@ -90,9 +88,11 @@ private:
 	// here use hash map to record the <port num, listen fd> pair
 	map<int, int> port_table;	
 
-	// here use hash map to record the <connect fd, port_num> pair
-	map<int, int> *conn_table;
+	// here use hash map to record the <connect fd, user id> pair
+	map<int, int> conn_table;
 
+	// here use hash map to record the <user id, service ptr> pair
+	map<int, Service*> service_table;
 
 	// close all the listen fd in child process
 	void closeAllFd()
@@ -104,16 +104,21 @@ private:
 
 	void addConnFd(int fd, int port_num)
 	{
-		conn_table->insert({fd, port_num});
-		cout << &fd << " is inserted to table" << endl;
+		conn_table.insert({fd, port_num});
+		cout << fd << " is inserted to table" << endl;
 	}
 
 	void closeConnFd(int fd)
 	{
-		if(conn_table->find(fd) != conn_table->end()) {
-			conn_table->erase(conn_table->find(fd));
+		if(conn_table.find(fd) != conn_table.end()) {
+			conn_table.erase(conn_table.find(fd));
 		}	
 		close(fd);
+	}
+
+	void addServiceToTable(int id, Service *s)
+	{
+		service_table.insert({id, s});
 	}
 
 };

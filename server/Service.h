@@ -39,17 +39,17 @@ public:
 	{
 		recvThread.join();
 		timerThread.join();
-		//groupChatThread.join();
+		groupChatThread.join();
 	}
 
 private:
 
-	int connfd;
+	int		connfd;
 
-	thread recvThread;
-	thread timerThread;
-	thread groupChatThread;
-	
+	thread	recvThread;
+	thread	timerThread;
+	thread	groupChatThread;
+
 	// not to use util the semaphore added
 	void echor() 
 	{
