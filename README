@@ -1,3 +1,10 @@
-Copyright (c) 2013-2015 by Jun Zeng.  <zengjun0916@gmail.com>
-All rights reserved.
+Author:  Jun Zeng.  <zengjun0916@gmail.com>
+Any ideas or getting evolved into development, free feel to contact my email.
+
+This simple application is to chat by a group of people at real-time together.
+The code structure and functions are still developing.
+And the server IP and port I have set up in /client/PRM.h
+
+The compile is separated into the client folder and server folder and get "make".
+
 
