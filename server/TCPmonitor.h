@@ -105,7 +105,6 @@ private:
 	void addConnFd(int fd, int port_num)
 	{
 		conn_table.insert({fd, port_num});
-		cout << fd << " is inserted to table" << endl;
 	}
 
 	void closeConnFd(int fd)

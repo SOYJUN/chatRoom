@@ -52,12 +52,10 @@ private:
 		char sendline[MAXLINE];
 		
 		while(1) {
-			cout << "Enter your msg: ";
 			scanf("%[^\n]%*c", sendline);
 			if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
 				throwError("[client]: write error");
 			}	
-			cout << "---Send out " << nwrite << "-bytes data" << endl;	
 		}
 	}
 
@@ -75,7 +73,7 @@ private:
 				cout << "\n[WARNING]: Server has shut down" << endl;
 				exit(0);
 			}
-			cout << "Receive data from server: " << recvline << endl; 
+			cout << "---" << recvline << endl;
 		}
 	}
 

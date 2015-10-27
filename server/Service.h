@@ -15,9 +15,12 @@ class Service
 
 public:
 
-	void runRecvThread()
+	/* Most of the running thread need to be passed the conn_table
+	   to cancel the entry of the conn fd of this service
+	*/
+	void runRecvThread(map<int, int> *conn_table)
 	{
-		recvThread = thread(&Service::recvMsg, this);
+		recvThread = thread(&Service::recvMsg, this, conn_table);
 	}
 
 	void runTimerThread()
@@ -62,7 +65,7 @@ private:
 		cout << "Echo to the client" << endl;
 	}
 
-	void recvMsg()
+	void recvMsg(map<int, int> *conn_table)
 	{
 		int		nread = 0;
 		char    buff[MAXLINE];
@@ -73,8 +76,8 @@ private:
 			if(nread < 0) {
 				throwError("Service<receiver>: read error");
 			} else if(nread == 0) {
-				cout << "\n[INFO]: Client has shut down" << endl;
-				exit(0);
+				processClientDown(connfd, conn_table);
+				break;
 			} 
 			cout << "Receive " << nread <<  "-bytes message from client: " << buff << endl;
 		}
@@ -119,13 +122,14 @@ private:
 			if(nread < 0) {
 				throwError("Service<receiver>: read error");
 			} else if(nread == 0) {
-				cout << "\n[INFO]: Client has shut down" << endl;
-				exit(0);
+				processClientDown(connfd, conn_table);
+				break;
 			} 
 			snprintf(buff, sizeof(buff), "client<%d>: ", conn_table->find(connfd)->second);	
 			strcat(buff, recvline);
 
 			for(auto it=conn_table->begin(); it!=conn_table->end(); it++) {
+				//if(it->first == connfd) continue;
 				if((nwrite = write(it->first, buff, strlen(buff))) < 0) {
 					throwError("Service<groupChat>: write error");
 				}			
@@ -133,6 +137,15 @@ private:
 			}
 		}
 	}	
+
+	void processClientDown(int connfd, map<int, int> *conn_table)
+	{
+		cout << "\n[INFO]: Client<" << conn_table->at(connfd) << ">  has shut down" << endl;
+		// delete the corresponding fd in table
+		if(conn_table->find(connfd) != conn_table->end()) {
+			conn_table->erase(conn_table->find(connfd));
+		}
+	}
 
 	
 
