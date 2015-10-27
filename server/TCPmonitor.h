@@ -11,7 +11,6 @@
 #include "Exception.h"
 #include "Service.h"
 
-#define traverse(c, it) for(auto (it) = (c).begin(); (it) != (c).end(); (it)++)
 
 
 class TCPmonitor
@@ -28,13 +27,13 @@ public:
 
 	void monitorRequest()
 	{
-		int					maxfdp1;
+		int					maxfdp1, connfd;
 		fd_set				rset;
 		
 		FD_ZERO(&rset);
 
 		while(1) {
-			if(maxfd == -1) throwError("[server]: no monitor fd set is empty");
+			if(maxfd == -1) throwError("[server]: no monitor, fd set is empty");
 			maxfdp1 = maxfd + 1;
 			// add all the listen fd into set
 			traverse(port_table, it) FD_SET(it->second, &rset);	
@@ -48,17 +47,19 @@ public:
 			traverse(port_table, it) {
 				if(FD_ISSET(it->second, &rset)) {
 					pid_t		pid;
-					int connfd = acceptConnection(it->second);
-					
+					connfd = acceptConnection(it->second);
+					cout << "before added, table size: " << conn_table->size() << endl;
+					addConnFd(connfd, idAllo++);
+					cout << "after added, table size: "<< conn_table->size() << endl;	
 					if((pid = fork()) == 0) {
 						closeAllFd();
 						Service service(connfd);
-						service.runRecvThread(); 
+						service.runGroupChatThread(conn_table); 
 						while(1); // block the main thread here
-						close(connfd);
+						closeConnFd(connfd);
 						exit(0);
 					}
-					close(connfd);
+					closeConnFd(connfd);
 				}
 			}
 		}
@@ -66,14 +67,22 @@ public:
 
 	TCPmonitor() 
 	{
+		conn_table = new map<int, int>();
+		idAllo = 0;
 		maxfd = -1;
 	}
 
-   ~TCPmonitor() {}
+	~TCPmonitor() 
+	{
+		delete(conn_table);
+	}
 
 
 
 private:
+
+	// use to allocate the id for the new coming connection
+	int idAllo;
 
 	// dynamic update the max fd in each operation of port_table
 	int maxfd; 
@@ -81,12 +90,30 @@ private:
 	// here use hash map to record the <port num, listen fd> pair
 	map<int, int> port_table;	
 
+	// here use hash map to record the <connect fd, port_num> pair
+	map<int, int> *conn_table;
+
+
 	// close all the listen fd in child process
 	void closeAllFd()
 	{
 		traverse(port_table, it) {
 			close(it->second);
 		}
+	}
+
+	void addConnFd(int fd, int port_num)
+	{
+		conn_table->insert({fd, port_num});
+		cout << &fd << " is inserted to table" << endl;
+	}
+
+	void closeConnFd(int fd)
+	{
+		if(conn_table->find(fd) != conn_table->end()) {
+			conn_table->erase(conn_table->find(fd));
+		}	
+		close(fd);
 	}
 
 };
