@@ -52,7 +52,9 @@ private:
 		char sendline[MAXLINE];
 		
 		while(1) {
-			scanf("%[^\n]%*c", sendline);
+			bzero(sendline, MAXLINE);
+			fgets(sendline, MAXLINE, stdin);
+			sendline[strlen(sendline)-1] = '\0';
 			if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
 				throwError("[client]: write error");
 			}	
@@ -68,7 +70,7 @@ private:
 			bzero(recvline, sizeof(recvline));
 			nread = read(sockfd, recvline, sizeof(recvline));
 			if(nread < 0) {
-				throwError("[client]: readline error");
+				throwError("[client]: read error");
 			} else if(nread == 0) {
 				cout << "\n[WARNING]: Server has shut down" << endl;
 				exit(0);

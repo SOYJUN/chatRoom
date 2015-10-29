@@ -52,9 +52,9 @@ public:
 					/* run the relevant service thread
 					   each user id corresponding to a service object
 					*/
-					Service *service = new Service(connfd);
+					Service *service = new Service(connfd, &conn_table);
 					addServiceToTable(idAllo, service);		
-					service->runGroupChatThread(&conn_table); 
+					service->runGroupChatThread(); 
 
 					idAllo++;
 				}

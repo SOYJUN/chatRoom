@@ -1,3 +1,8 @@
+/*	Here I put all the services into this class,
+	for the fucture development, I will use Service class as a base class 
+	to be inherited by other kind of specific services
+*/
+
 #ifndef _SERVICE_H
 #define _SERVICE_H
 
@@ -18,7 +23,7 @@ public:
 	/* Most of the running thread need to be passed the conn_table
 	   to cancel the entry of the conn fd of this service
 	*/
-	void runRecvThread(map<int, int> *conn_table)
+	void runRecvThread()
 	{
 		recvThread = thread(&Service::recvMsg, this, conn_table);
 	}
@@ -28,14 +33,15 @@ public:
 		timerThread = thread(&Service::timer, this);	
 	}
 
-	void runGroupChatThread(map<int, int> *conn_table)
+	void runGroupChatThread()
 	{
 		groupChatThread = thread(&Service::groupChat, this, conn_table); 
 	}
 
-	Service(int fd) 
+	Service(int fd, map<int, int> *table) 
 	{
 		connfd = fd;
+		conn_table = table;
 	}
    
 	~Service() 
@@ -48,6 +54,7 @@ public:
 private:
 
 	int		connfd;
+	map<int, int> *conn_table;
 
 	thread	recvThread;
 	thread	timerThread;
@@ -74,7 +81,7 @@ private:
 			bzero(buff, sizeof(buff));
 			nread = read(connfd, buff, sizeof(buff));
 			if(nread < 0) {
-				throwError("Service<receiver>: read error");
+				throwError("Service<recvMsg>: read error");
 			} else if(nread == 0) {
 				processClientDown(connfd, conn_table);
 				break;
@@ -127,9 +134,8 @@ private:
 			} 
 			snprintf(buff, sizeof(buff), "client<%d>: ", conn_table->find(connfd)->second);	
 			strcat(buff, recvline);
-
 			for(auto it=conn_table->begin(); it!=conn_table->end(); it++) {
-				//if(it->first == connfd) continue;
+				if(it->first == connfd) continue;
 				if((nwrite = write(it->first, buff, strlen(buff))) < 0) {
 					throwError("Service<groupChat>: write error");
 				}			
